@@ -59,12 +59,12 @@ def train_model(model, train_loader, optimizer, criterion, epoch):
         print("finish backward")
         #begin added code
         for p in model.parameters():
-            print("try to gather")
+            print("start gather")
             if args.rank == 0:
                 gradient_list = [torch.zeros_like(p.grad) for g in range(args.size)]
                 torch.distributed.gather(p.grad, gather_list=gradient_list, async_op=False)
                 print(output)
-                print("finish gathering")
+                print("finish gather")
 
                 gradient_sum = torch.zeros_like(p.grad)
                 for i in range(args.size):
@@ -72,8 +72,13 @@ def train_model(model, train_loader, optimizer, criterion, epoch):
                     print(gradient_sum)
                 gradient_mean = gradient_sum/args.size
                 print(gradient_mean)
+
+                torch.distributed.scatter(p.grad, [gradient_mean for i in range(args.size)], src=0, async_op=False)
             else:
                 torch.distributed.gather(p.grad, async_op=False)
+                print("finish gather")
+                torch.distributed.scatter(p.grad, src=0, async_op=False)
+
 
             #torch.distributed.scatter(mean_vector
         
