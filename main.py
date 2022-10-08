@@ -58,7 +58,7 @@ def train_model(model, train_loader, optimizer, criterion, epoch):
         #begin added code
         for p in model.parameters():
             gradient_list = [torch.zeros_like(p.grad) for g in range(args.size)]
-            torch.distributed.gather(p.grad, gather_list=gradient_list, dst=args.rank, asynch_op=False)
+            torch.distributed.gather(p.grad, gather_list=gradient_list, dst=args.rank, async_op=False)
             gradient_sum = torch.zeros_like(p.grad)
             
             for i in range(args.size):
