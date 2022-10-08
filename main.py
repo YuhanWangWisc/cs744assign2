@@ -116,7 +116,8 @@ def main():
     torch.distributed.init_process_group(backend="gloo", init_method=args.master_ip, world_size=args.size, rank=args.rank)
     print("successfully set up the process group")
     
-    torch.manual_seed(numpy.random.seed(0))
+    np.random.seed(0)
+    torch.manual_seed(0)
 
     normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
                                 std=[x/255.0 for x in [63.0, 62.1, 66.7]])
