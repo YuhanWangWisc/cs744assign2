@@ -41,6 +41,7 @@ def train_model(model, train_loader, optimizer, criterion, epoch):
     #group = torch.distributed.new_group([0,1,2,3])
     # remember to exit the train loop at end of the epoch
     for batch_idx, (data, target) in enumerate(train_loader):
+        print("batch " , batch_idx)
         if batch_idx == 2:
             lst = time_diff_list[1:]
             print(lst)
@@ -55,12 +56,17 @@ def train_model(model, train_loader, optimizer, criterion, epoch):
         loss = criterion(output, target)
         loss.backward()
         
+        print("finish backward")
         #begin added code
         for p in model.parameters():
+            print("try to gather")
             gradient_list = [torch.zeros_like(p.grad) for g in range(args.size)]
-            torch.distributed.gather(p.grad, gather_list=gradient_list, dst=args.rank, async_op=False)
+            print("1")
+            torch.distributed.gather(p.grad, gather_list=gradient_list, async_op=False)
+            print("2")
             gradient_sum = torch.zeros_like(p.grad)
             
+            print("finish gather")
             for i in range(args.size):
                 gradient_sum += gradient_list[i]
             print(gradient_sum)
