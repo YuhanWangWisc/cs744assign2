@@ -32,7 +32,7 @@ def train_model(model, train_loader, optimizer, criterion, epoch, args):
     #group = torch.distributed.new_group([0,1,2,3])
     # remember to exit the train loop at end of the epoch
     for batch_idx, (data, target) in enumerate(train_loader):
-        print("batch " , batch_idx)
+        #print("batch " , batch_idx)
         if batch_idx == 40:
             lst = time_diff_list[1:]
             avg_time = sum(lst)/len(lst)
