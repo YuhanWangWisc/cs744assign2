@@ -35,7 +35,6 @@ def train_model(model, train_loader, optimizer, criterion, epoch, args):
         print("batch " , batch_idx)
         if batch_idx == 40:
             lst = time_diff_list[1:]
-            print(lst)
             avg_time = sum(lst)/len(lst)
             print(f'Average time = {avg_time}')
             break
@@ -47,28 +46,28 @@ def train_model(model, train_loader, optimizer, criterion, epoch, args):
         loss = criterion(output, target)
         loss.backward()
         
-        print("finish backward")
+        #print("finish backward")
         #begin added code
         for p in model.parameters():
-            print("start gather")
+            #print("start gather")
             if args.rank == 0:
                 gradient_list = [torch.zeros_like(p.grad) for g in range(args.size)]
                 torch.distributed.gather(p.grad, gather_list=gradient_list, async_op=False)
-                print("finish gather")
+                #print("finish gather")
 
                 gradient_sum = torch.zeros_like(p.grad)
                 for i in range(args.size):
                     gradient_sum += gradient_list[i]
                     
                 gradient_mean = gradient_sum/args.size
-                print(gradient_mean)
+                #print(gradient_mean)
 
                 torch.distributed.scatter(p.grad, [gradient_mean for i in range(args.size)], src=0, async_op=False)
             else:
                 torch.distributed.gather(p.grad, async_op=False)
-                print("finish gather")
+                #print("finish gather")
                 torch.distributed.scatter(p.grad, src=0, async_op=False)
-                print(p.grad)
+                #print(p.grad)
         
         # end added code
         
@@ -78,8 +77,7 @@ def train_model(model, train_loader, optimizer, criterion, epoch, args):
         running_loss += loss.item()
         end = time.now()
         diff = end - start
-        print(diff)
-        time_diff_list.append(int(diff.total_seconds()))
+        time_diff_list.append(diff.total_seconds())
        
         if batch_idx % 20 == 19:    # print every 20 mini-batches
             print(f'[{epoch + 1}, {batch_idx + 1:5d}] loss: {running_loss / 20:.3f}')
