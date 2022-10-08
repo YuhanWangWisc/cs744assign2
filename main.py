@@ -28,6 +28,14 @@ def train_model(model, train_loader, optimizer, criterion, epoch):
     epoch (int): Current epoch number
     """
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--master-ip', dest='master_ip', type=str)
+    parser.add_argument('--num-nodes', dest='size', type=int)
+    parser.add_argument('--rank', dest='rank',type=int)
+    args = parser.parse_args()
+    torch.distributed.init_process_group(backend="gloo", init_method=args.master_ip, world_size=args.size, rank=args.rank)
+    print("successfully set up the process group")
+
     running_loss = 0.0
     time_diff_list = []
     #group = torch.distributed.new_group([0,1,2,3])
@@ -96,20 +104,8 @@ def test_model(model, test_loader, criterion):
             100. * correct / len(test_loader.dataset)))
             
 def main():
-    print("1")
     if (torch.distributed.is_available() == False):
         return
-    print("2")
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--master-ip', dest='master_ip', type=str)
-    parser.add_argument('--num-nodes', dest='size', type=int)
-    parser.add_argument('--rank', dest='rank',type=int)
-    args = parser.parse_args()
-    print("3")
-    torch.distributed.init_process_group(backend="gloo", init_method=args.master_ip, world_size=args.size, rank=args.rank)
-
-    print("4")
-
 
     normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
                                 std=[x/255.0 for x in [63.0, 62.1, 66.7]])
