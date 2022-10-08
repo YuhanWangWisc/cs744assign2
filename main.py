@@ -14,12 +14,11 @@ from datetime import datetime as time
 import torch.distributed as dist
 import argparse
 
-torch.distributed.is_available()
 device = "cpu"
 torch.set_num_threads(4)
 
 batch_size = 256 # batch for one node
-def train_model(model, train_loader, optimizer, criterion, epoch):
+def train_model(model, train_loader, optimizer, criterion, epoch, args):
     """
     model (torch.nn.module): The model created to train
     train_loader (pytorch data loader): Training data loader
@@ -28,21 +27,13 @@ def train_model(model, train_loader, optimizer, criterion, epoch):
     epoch (int): Current epoch number
     """
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--master-ip', dest='master_ip', type=str)
-    parser.add_argument('--num-nodes', dest='size', type=int)
-    parser.add_argument('--rank', dest='rank',type=int)
-    args = parser.parse_args()
-    torch.distributed.init_process_group(backend="gloo", init_method=args.master_ip, world_size=args.size, rank=args.rank)
-    print("successfully set up the process group")
-
     running_loss = 0.0
     time_diff_list = []
     #group = torch.distributed.new_group([0,1,2,3])
     # remember to exit the train loop at end of the epoch
     for batch_idx, (data, target) in enumerate(train_loader):
         print("batch " , batch_idx)
-        if batch_idx == 2:
+        if batch_idx == 40:
             lst = time_diff_list[1:]
             print(lst)
             avg_time = sum(lst)/len(lst)
@@ -63,13 +54,12 @@ def train_model(model, train_loader, optimizer, criterion, epoch):
             if args.rank == 0:
                 gradient_list = [torch.zeros_like(p.grad) for g in range(args.size)]
                 torch.distributed.gather(p.grad, gather_list=gradient_list, async_op=False)
-                print(output)
                 print("finish gather")
 
                 gradient_sum = torch.zeros_like(p.grad)
                 for i in range(args.size):
                     gradient_sum += gradient_list[i]
-                    print(gradient_sum)
+                    
                 gradient_mean = gradient_sum/args.size
                 print(gradient_mean)
 
@@ -79,8 +69,6 @@ def train_model(model, train_loader, optimizer, criterion, epoch):
                 print("finish gather")
                 torch.distributed.scatter(p.grad, src=0, async_op=False)
                 print(p.grad)
-
-            #torch.distributed.scatter(mean_vector
         
         # end added code
         
@@ -120,6 +108,16 @@ def main():
     if (torch.distributed.is_available() == False):
         return
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--master-ip', dest='master_ip', type=str)
+    parser.add_argument('--num-nodes', dest='size', type=int)
+    parser.add_argument('--rank', dest='rank',type=int)
+    args = parser.parse_args()
+    torch.distributed.init_process_group(backend="gloo", init_method=args.master_ip, world_size=args.size, rank=args.rank)
+    print("successfully set up the process group")
+    
+    torch.manual_seed(numpy.random.seed(0))
+
     normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
                                 std=[x/255.0 for x in [63.0, 62.1, 66.7]])
     transform_train = transforms.Compose([
@@ -134,10 +132,11 @@ def main():
             normalize])
     training_set = datasets.CIFAR10(root="./data", train=True,
                                                 download=True, transform=transform_train)
+    sampler = torch.utils.data.distributed.DistributedSampler(training_set, num_replicas=args.size, rank=args.rank)
     train_loader = torch.utils.data.DataLoader(training_set,
                                                     num_workers=2,
-                                                    batch_size=batch_size,
-                                                    sampler=None,
+                                                    batch_size=batch_size/args.size,
+                                                    sampler=sampler,
                                                     shuffle=True,
                                                     pin_memory=True)
     test_set = datasets.CIFAR10(root="./data", train=False,
@@ -156,7 +155,7 @@ def main():
                           momentum=0.9, weight_decay=0.0001)
     # running training for one epoch
     for epoch in range(1):
-        train_model(model, train_loader, optimizer, training_criterion, epoch)
+        train_model(model, train_loader, optimizer, training_criterion, epoch, args)
         test_model(model, test_loader, training_criterion)
 
 if __name__ == "__main__":
