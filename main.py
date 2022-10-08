@@ -136,7 +136,7 @@ def main():
     sampler = torch.utils.data.distributed.DistributedSampler(training_set, num_replicas=args.size, rank=args.rank)
     train_loader = torch.utils.data.DataLoader(training_set,
                                                     num_workers=2,
-                                                    batch_size=batch_size/args.size,
+                                                    batch_size=int(batch_size/args.size),
                                                     sampler=sampler,
                                                     pin_memory=True)
     test_set = datasets.CIFAR10(root="./data", train=False,
