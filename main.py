@@ -30,6 +30,7 @@ def train_model(model, train_loader, optimizer, criterion, epoch):
 
     running_loss = 0.0
     time_diff_list = []
+    #group = torch.distributed.new_group([0,1,2,3])
     # remember to exit the train loop at end of the epoch
     for batch_idx, (data, target) in enumerate(train_loader):
         if batch_idx == 2:
@@ -47,15 +48,18 @@ def train_model(model, train_loader, optimizer, criterion, epoch):
         loss.backward()
         
         #begin added code
-        help(model.parameters())
         for p in model.parameters():
-            print(p)
-            print(p.grad)
-        gradients = model.parameters().grad
-        gathered_gradients = torch.distributed.gather(gradients)
-        mean_vector = torch.mean(gathered_gradients)
-        #torch.distributed.scatter(mean_vector
-
+            gradient_list = [torch.zeros_like(p.grad) for g in range(args.size)]
+            torch.distributed.gather(p.grad, gather_list=gradient_list, dst=args.rank, asynch_op=False]
+            gradient_sum = torch.zeros_like(p.grad)
+            
+            for i in range(args.size):
+                gradient_sum += gradient_list[i]
+            print(gradient_sum)
+            gradient_mean = gradient_sum/args.size
+            print(gradient_mean)
+            #mean_vector = torch.mean(p.grad, 1, keepdim=True)
+            #torch.distributed.scatter(mean_vector
         
         # end added code
         
