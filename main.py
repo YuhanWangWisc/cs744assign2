@@ -64,18 +64,17 @@ def train_model(model, train_loader, optimizer, criterion, epoch):
                 gradient_list = [torch.zeros_like(p.grad) for g in range(args.size)]
                 torch.distributed.gather(p.grad, gather_list=gradient_list, async_op=False)
                 print(output)
-            else:
-                torch.distributed.gather(p.grad, gather_list=[], async_op=False)
+                print("finish gathering")
 
-            gradient_sum = torch.zeros_like(p.grad)
-            
-            print("finish gather")
-            for i in range(args.size):
-                gradient_sum += gradient_list[i]
-            print(gradient_sum)
-            gradient_mean = gradient_sum/args.size
-            print(gradient_mean)
-            #mean_vector = torch.mean(p.grad, 1, keepdim=True)
+                gradient_sum = torch.zeros_like(p.grad)
+                for i in range(args.size):
+                    gradient_sum += gradient_list[i]
+                    print(gradient_sum)
+                gradient_mean = gradient_sum/args.size
+                print(gradient_mean)
+            else:
+                torch.distributed.gather(p.grad, async_op=False)
+
             #torch.distributed.scatter(mean_vector
         
         # end added code
