@@ -60,10 +60,13 @@ def train_model(model, train_loader, optimizer, criterion, epoch):
         #begin added code
         for p in model.parameters():
             print("try to gather")
-            gradient_list = [torch.zeros_like(p.grad) for g in range(args.size)]
-            print("1")
-            torch.distributed.gather(p.grad, gather_list=gradient_list, async_op=False)
-            print("2")
+            if args.rank == 0:
+                gradient_list = [torch.zeros_like(p.grad) for g in range(args.size)]
+                torch.distributed.gather(p.grad, gather_list=gradient_list, async_op=False)
+                print(output)
+            else:
+                torch.distributed.gather(p.grad, gather_list=[], async_op=False)
+
             gradient_sum = torch.zeros_like(p.grad)
             
             print("finish gather")
