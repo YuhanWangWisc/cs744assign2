@@ -78,7 +78,7 @@ def train_model(model, train_loader, optimizer, criterion, epoch):
                 torch.distributed.gather(p.grad, async_op=False)
                 print("finish gather")
                 torch.distributed.scatter(p.grad, src=0, async_op=False)
-
+                print(p.grad)
 
             #torch.distributed.scatter(mean_vector
         
