@@ -29,10 +29,9 @@ def train_model(model, train_loader, optimizer, criterion, epoch, args):
 
     running_loss = 0.0
     time_diff_list = []
-    #group = torch.distributed.new_group([0,1,2,3])
+
     # remember to exit the train loop at end of the epoch
     for batch_idx, (data, target) in enumerate(train_loader):
-        #print("batch " , batch_idx)
         if batch_idx == 40:
             lst = time_diff_list[1:]
             avg_time = sum(lst)/len(lst)
@@ -40,19 +39,16 @@ def train_model(model, train_loader, optimizer, criterion, epoch, args):
             break
 
         start = time.now()
-        # Your code goes here!
+
         data, target = data.to(device), target.to(device)
         output = model(data)
         loss = criterion(output, target)
         loss.backward()
         
-        #print("finish backward")
-        #begin added code
         for p in model.parameters():
             # synchronize gradients using allreduce
             torch.distributed.all_reduce(p.grad)
             p.grad = p.grad/args.size
-        # end added code
         
         # zero the parameter gradients
         optimizer.zero_grad()
@@ -95,6 +91,7 @@ def main():
     parser.add_argument('--num-nodes', dest='size', type=int)
     parser.add_argument('--rank', dest='rank',type=int)
     args = parser.parse_args()
+
     torch.distributed.init_process_group(backend="gloo", init_method=args.master_ip, world_size=args.size, rank=args.rank)
     print("successfully set up the process group")
     
