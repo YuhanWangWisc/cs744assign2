@@ -49,34 +49,17 @@ def train_model(model, train_loader, optimizer, criterion, epoch, args):
         #print("finish backward")
         #begin added code
         for p in model.parameters():
-            #print("start gather")
-            if args.rank == 0:
-                gradient_list = [torch.zeros_like(p.grad) for g in range(args.size)]
-                torch.distributed.gather(p.grad, gather_list=gradient_list, async_op=False)
-                #print("finish gather")
-
-                gradient_sum = torch.zeros_like(p.grad)
-                for i in range(args.size):
-                    gradient_sum += gradient_list[i]
-                    
-                gradient_mean = gradient_sum/args.size
-                #print(gradient_mean)
-
-                torch.distributed.scatter(p.grad, [gradient_mean for i in range(args.size)], src=0, async_op=False)
-            else:
-                torch.distributed.gather(p.grad, async_op=False)
-                #print("finish gather")
-                torch.distributed.scatter(p.grad, src=0, async_op=False)
-                #print(p.grad)
-        
-        dist.all_reduce(tensor, op=dist.ReduceOp.SUM, group=group)
-        torch.distributed.all_reduce(p.grad, op=torch.distributed.ReduceOP.SUM)
-        p.grad = p.grad/4
+            # synchronize gradients using allreduce
+            torch.distributed.all_reduce(p.grad)
+            print(p.grad)
+            p.grad = p.grad/args.size
+            print(p.grad)
         # end added code
         
         # zero the parameter gradients
         optimizer.zero_grad()
         optimizer.step()
+
         running_loss += loss.item()
         end = time.now()
         diff = end - start

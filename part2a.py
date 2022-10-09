@@ -74,6 +74,7 @@ def train_model(model, train_loader, optimizer, criterion, epoch, args):
         # zero the parameter gradients
         optimizer.zero_grad()
         optimizer.step()
+
         running_loss += loss.item()
         end = time.now()
         diff = end - start
