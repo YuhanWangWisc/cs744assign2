@@ -129,12 +129,12 @@ def main():
 
     model = mdl.VGG11()
     model.to(device)
-    for p in model.parameters():
-        print(p)
     optimizer = optim.SGD(model.parameters(), lr=0.1,
                           momentum=0.9, weight_decay=0.0001)
     # running training for one epoch
     for epoch in range(15):
+        for p in model.parameters():
+            print(p)
         train_model(model, train_loader, optimizer, training_criterion, epoch, args)
         test_model(model, test_loader, training_criterion)
 
