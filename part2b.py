@@ -51,9 +51,7 @@ def train_model(model, train_loader, optimizer, criterion, epoch, args):
         for p in model.parameters():
             # synchronize gradients using allreduce
             torch.distributed.all_reduce(p.grad)
-            print(p.grad)
             p.grad = p.grad/args.size
-            print(p.grad)
         # end added code
         
         # zero the parameter gradients
