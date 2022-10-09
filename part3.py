@@ -13,11 +13,12 @@ import model as mdl
 from datetime import datetime as time
 import torch.distributed as dist
 import argparse
+from torch.nn.parallel import DistributedDataParallel as DDP
 
 device = "cpu"
 torch.set_num_threads(4)
 
-batch_size = 256 # batch for one node
+batch_size = 256 # batch for one iteration
 def train_model(model, train_loader, optimizer, criterion, epoch, args):
     """
     model (torch.nn.module): The model created to train
@@ -44,11 +45,6 @@ def train_model(model, train_loader, optimizer, criterion, epoch, args):
         output = model(data)
         loss = criterion(output, target)
         loss.backward()
-        
-        for p in model.parameters():
-            # synchronize gradients using allreduce
-            torch.distributed.all_reduce(p.grad)
-            p.grad = p.grad/args.size
         
         # zero the parameter gradients
         optimizer.zero_grad()
@@ -130,6 +126,7 @@ def main():
 
     model = mdl.VGG11()
     model.to(device)
+    model = DDP(model)
     optimizer = optim.SGD(model.parameters(), lr=0.1,
                           momentum=0.9, weight_decay=0.0001)
     # running training for one epoch
