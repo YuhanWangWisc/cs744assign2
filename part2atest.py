@@ -136,13 +136,6 @@ def main():
     # running training for one epoch
     for epoch in range(15):
         if epoch == 1 :
-            counter = 0
-            for p in model.parameters():
-                torch.save(p, f'tensor_{counter}.pt')
-                # Save to io.BytesIO buffer
-                buffer = io.BytesIO()
-                torch.save(p, buffer)
-                counter+=1
             torch.save(model.state_dict(), 'torchmodel_weights.pth')
         train_model(model, train_loader, optimizer, training_criterion, epoch, args)
         test_model(model, test_loader, training_criterion)
