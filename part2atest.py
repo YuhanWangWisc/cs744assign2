@@ -136,7 +136,7 @@ def main():
         if epoch == 1 :
             counter = 0
             for p in model.parameters():
-                torch.save(p, 'f'tensor_{counter}.pt'')
+                torch.save(p, f'tensor_{counter}.pt')
                 # Save to io.BytesIO buffer
                 buffer = io.BytesIO()
                 torch.save(p, buffer)
