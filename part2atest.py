@@ -33,6 +33,9 @@ def train_model(model, train_loader, optimizer, criterion, epoch, args):
     # remember to exit the train loop at end of the epoch
     for batch_idx, (data, target) in enumerate(train_loader):
 
+        # zero the parameter gradients
+        optimizer.zero_grad()
+
         data, target = data.to(device), target.to(device)
         output = model(data)
         loss = criterion(output, target)
@@ -53,8 +56,6 @@ def train_model(model, train_loader, optimizer, criterion, epoch, args):
                 torch.distributed.gather(p.grad, async_op=False)
                 torch.distributed.scatter(p.grad, src=0, async_op=False)
         
-        # zero the parameter gradients
-        optimizer.zero_grad()
         optimizer.step()
 
         running_loss += loss.item()
