@@ -32,6 +32,9 @@ def train_model(model, train_loader, optimizer, criterion, epoch, args):
     # remember to exit the train loop at end of the epoch
     for batch_idx, (data, target) in enumerate(train_loader):
 
+        # zero the parameter gradients
+        optimizer.zero_grad()
+
         data, target = data.to(device), target.to(device)
         output = model(data)
         loss = criterion(output, target)
@@ -42,8 +45,6 @@ def train_model(model, train_loader, optimizer, criterion, epoch, args):
             torch.distributed.all_reduce(p.grad)
             p.grad = p.grad/args.size
         
-        # zero the parameter gradients
-        optimizer.zero_grad()
         optimizer.step()
 
         running_loss += loss.item()
@@ -123,6 +124,8 @@ def main():
                           momentum=0.9, weight_decay=0.0001)
     # running training for one epoch
     for epoch in range(15):
+        if epoch == 1 :
+            torch.save(model.state_dict(), 'torchmodel_weights_2b.pth')
         train_model(model, train_loader, optimizer, training_criterion, epoch, args)
         test_model(model, test_loader, training_criterion)
 

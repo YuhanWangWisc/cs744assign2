@@ -136,7 +136,7 @@ def main():
     # running training for one epoch
     for epoch in range(15):
         if epoch == 1 :
-            torch.save(model.state_dict(), 'torchmodel_weights.pth')
+            torch.save(model.state_dict(), 'torchmodel_weights_2a.pth')
         train_model(model, train_loader, optimizer, training_criterion, epoch, args)
         test_model(model, test_loader, training_criterion)
 

@@ -40,6 +40,9 @@ def train_model(model, train_loader, optimizer, criterion, epoch, args):
 
         start = time.now()
 
+        # zero the parameter gradients
+        optimizer.zero_grad()
+
         data, target = data.to(device), target.to(device)
         output = model(data)
         loss = criterion(output, target)
@@ -50,8 +53,6 @@ def train_model(model, train_loader, optimizer, criterion, epoch, args):
             torch.distributed.all_reduce(p.grad)
             p.grad = p.grad/args.size
         
-        # zero the parameter gradients
-        optimizer.zero_grad()
         optimizer.step()
 
         running_loss += loss.item()

@@ -32,13 +32,15 @@ def train_model(model, train_loader, optimizer, criterion, epoch, args):
 
     # remember to exit the train loop at end of the epoch
     for batch_idx, (data, target) in enumerate(train_loader):
+        
+        # zero the parameter gradients
+        optimizer.zero_grad()
+
         data, target = data.to(device), target.to(device)
         output = model(data)
         loss = criterion(output, target)
         loss.backward()
         
-        # zero the parameter gradients
-        optimizer.zero_grad()
         optimizer.step()
 
         running_loss += loss.item()
