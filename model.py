@@ -21,9 +21,9 @@ def _make_layers(cfg):
                                     stride=1,
                                     padding=1,
                                     bias=True))
-            # batch_norm = nn.BatchNorm2d(num_features=layer_cfg)
-            # batch_norm.track_running_stats = False
-            layers.append(nn.BatchNorm2d(num_features=layer_cfg))
+            batch_norm = nn.BatchNorm2d(num_features=layer_cfg)
+            batch_norm.track_running_stats = False
+            layers.append(batch_norm)
             layers.append(nn.ReLU(inplace=True))
             in_channels = layer_cfg
     return nn.Sequential(*layers)
